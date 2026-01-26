@@ -3,10 +3,27 @@ import { cookies } from 'next/headers'
 
 export function createClient() {
     const cookieStore = cookies()
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    // Fallback for build time if environment variables are not provided
+    if (!supabaseUrl || !supabaseAnonKey) {
+        return createServerClient(
+            'https://placeholder-url.supabase.co',
+            'placeholder-key',
+            {
+                cookies: {
+                    get(name: string) { return undefined },
+                    set(name: string, value: string, options: CookieOptions) { },
+                    remove(name: string, options: CookieOptions) { },
+                },
+            }
+        )
+    }
 
     return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
             cookies: {
                 get(name: string) {
