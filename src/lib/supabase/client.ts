@@ -7,8 +7,8 @@ export function createClient() {
     // Fallback for build time if environment variables are not provided
     if (!supabaseUrl || !supabaseAnonKey) {
         return createBrowserClient(
-            'https://placeholder-url.supabase.co',
-            'placeholder-key'
+            'https://xyz.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5eiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjg2MDk3NjAwLCJleHAiOjIxNDU5MTY4MDB9.placeholder'
         )
     }
 
