@@ -98,10 +98,18 @@ export const useDataStore = create<DataState>((set, get) => ({
                 window.location.hostname !== '127.0.0.1'
 
             if (isOnline) {
-                // Fetch via Proxy
-                const tables = ['expenses', 'income', 'credit_cards', 'budgets', 'goals', 'categories']
+                // Fetch via Proxy with explicit selects for joins
+                const configs = [
+                    { table: 'expenses', select: '*, category:categories(*), credit_card:credit_cards(*)' },
+                    { table: 'income', select: '*' },
+                    { table: 'credit_cards', select: '*' },
+                    { table: 'budgets', select: '*, category:categories(*)' },
+                    { table: 'goals', select: '*' },
+                    { table: 'categories', select: '*' }
+                ]
+
                 const results = await Promise.all(
-                    tables.map(t => fetch(`/api/data/proxy?table=${t === 'credit_cards' ? 'credit_cards' : t}`).then(r => r.json()))
+                    configs.map(c => fetch(`/api/data/proxy?table=${c.table}&select=${encodeURIComponent(c.select)}`).then(r => r.json()))
                 )
 
                 set({
@@ -159,7 +167,11 @@ export const useDataStore = create<DataState>((set, get) => ({
                 const response = await fetch('/api/data/proxy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ table: 'expenses', item: expense })
+                    body: JSON.stringify({
+                        table: 'expenses',
+                        item: expense,
+                        select: '*, category:categories(*), credit_card:credit_cards(*)'
+                    })
                 })
                 const { data, error } = await response.json()
                 if (error) throw new Error(error)
@@ -212,9 +224,13 @@ export const useDataStore = create<DataState>((set, get) => ({
 
             if (isOnline) {
                 const response = await fetch('/api/data/proxy', {
-                    method: 'POST', // Using POST for update in our proxy implementation for simplicity
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ table: 'expenses', item: { id, ...updateData } })
+                    body: JSON.stringify({
+                        table: 'expenses',
+                        item: { id, ...updateData },
+                        select: '*, category:categories(*), credit_card:credit_cards(*)'
+                    })
                 })
                 const { data: updatedExpense, error } = await response.json()
                 if (error) throw new Error(error)
@@ -500,7 +516,11 @@ export const useDataStore = create<DataState>((set, get) => ({
                 const response = await fetch('/api/data/proxy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ table: 'budgets', item: budget })
+                    body: JSON.stringify({
+                        table: 'budgets',
+                        item: budget,
+                        select: '*, category:categories(*)'
+                    })
                 })
                 const { data, error } = await response.json()
                 if (error) throw new Error(error)
@@ -543,7 +563,11 @@ export const useDataStore = create<DataState>((set, get) => ({
                 const response = await fetch('/api/data/proxy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ table: 'budgets', item: { id, ...data } })
+                    body: JSON.stringify({
+                        table: 'budgets',
+                        item: { id, ...data },
+                        select: '*, category:categories(*)'
+                    })
                 })
                 const { data: updatedBudget, error } = await response.json()
                 if (error) throw new Error(error)

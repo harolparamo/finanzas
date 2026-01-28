@@ -8,8 +8,8 @@ interface AuthState {
     isAuthenticated: boolean
     error: string | null
     setUser: (user: Profile | null) => void
-    login: (email: string, password: string) => Promise<void>
-    register: (email: string, password: string, fullName: string) => Promise<void>
+    login: (email: string, password: string) => Promise<boolean>
+    register: (email: string, password: string, fullName: string) => Promise<boolean>
     logout: () => Promise<void>
     checkSession: () => Promise<void>
 }
@@ -81,7 +81,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('demo_mode', 'true')
                 }
-                return
+                return true
             }
 
             const isOnline = typeof window !== 'undefined' &&
@@ -98,6 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 if (!response.ok) throw new Error(result.error || 'Login failed')
 
                 await get().checkSession()
+                return true
             } else {
                 const supabase = createClient()
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -113,10 +114,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     user: { ...data.user, ...profile } as Profile,
                     isAuthenticated: true,
                 })
+                return true
             }
         } catch (error: any) {
             set({ error: error.message })
-            throw error
+            return false
         } finally {
             set({ isLoading: false })
         }
@@ -138,7 +140,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const result = await response.json()
                 if (!response.ok) throw new Error(result.error || 'Registration failed')
 
-                await get().login(email, password)
+                return await get().login(email, password)
             } else {
                 const supabase = createClient()
                 const { error } = await supabase.auth.signUp({
@@ -147,11 +149,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     options: { data: { full_name } },
                 })
                 if (error) throw error
-                await get().login(email, password)
+                return await get().login(email, password)
             }
         } catch (error: any) {
             set({ error: error.message })
-            throw error
+            return false
         } finally {
             set({ isLoading: false })
         }
