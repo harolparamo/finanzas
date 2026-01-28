@@ -4,7 +4,6 @@ import {
     ExpenseFormData, IncomeFormData, CreditCardFormData, BudgetFormData, GoalFormData
 } from '@/types/database'
 import { createClient } from '../lib/supabase/client'
-import { useAuthStore } from './auth-store'
 
 interface DataState {
     expenses: Expense[]
@@ -56,6 +55,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     fetchData: async () => {
         set({ isLoading: true, error: null })
 
+        const { useAuthStore } = await import('./auth-store')
         const user = useAuthStore.getState().user
         const isDemoMode = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true'
         const isDemoUser = user?.email?.toLowerCase() === 'demo@example.com'

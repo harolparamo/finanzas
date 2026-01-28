@@ -2,20 +2,23 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useDataStore } from '@/store/data-store'
+import { useAuthStore } from '@/store/auth-store'
 import { formatCurrency, formatPercentage } from '@/lib/formatters'
 import { ArrowDownRight, Wallet, TrendingUp } from 'lucide-react'
 
 export function SummaryCards() {
     const { income, expenses, goals } = useDataStore()
+    const { user } = useAuthStore()
 
     const totalIncome = income.reduce((sum, i) => sum + i.amount, 0)
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
     const totalSavings = goals.reduce((sum, g) => sum + g.current_amount, 0)
 
-    // Mock changes for visual effect
-    const incomeChange = 40
-    const expenseChange = 5
-    const savingsChange = 12
+    // Only show changes for the demo user for visual effect
+    const isDemo = user?.email === 'demo@example.com'
+    const incomeChange = isDemo ? 40 : 0
+    const expenseChange = isDemo ? 5 : 0
+    const savingsChange = isDemo ? 12 : 0
 
     const cards = [
         {
@@ -57,13 +60,15 @@ export function SummaryCards() {
                         <div className="text-2xl font-bold text-primary-dark">
                             {formatCurrency(card.value)}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success flex items-center gap-1`}>
-                                <TrendingUp className="h-3 w-3" />
-                                {formatPercentage(card.change)}
-                            </span>
-                            <span className="text-xs text-muted-foreground">Than last month</span>
-                        </div>
+                        {card.change > 0 && (
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success flex items-center gap-1`}>
+                                    <TrendingUp className="h-3 w-3" />
+                                    {formatPercentage(card.change)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">Than last month</span>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             ))}

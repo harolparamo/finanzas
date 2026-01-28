@@ -15,6 +15,7 @@ import {
     LogOut
 } from 'lucide-react'
 import { useUIStore } from '@/store/ui-store'
+import { useAuthStore } from '@/store/auth-store'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 const navItems = [
@@ -34,6 +35,7 @@ const bottomNavItems = [
 export function Sidebar() {
     const pathname = usePathname()
     const { sidebarOpen } = useUIStore()
+    const { user } = useAuthStore()
 
     return (
         <aside
@@ -124,20 +126,19 @@ export function Sidebar() {
                 </ul>
 
                 {/* User */}
-                {sidebarOpen && (
+                {sidebarOpen && user && (
                     <div className="mt-4 flex items-center gap-3 rounded-lg bg-primary/50 p-3 animate-fade-in">
                         <Avatar className="h-9 w-9">
                             <AvatarFallback className="bg-accent text-primary-dark text-sm">
-                                UD
+                                {user.full_name?.substring(0, 2).toUpperCase() || 'U'}
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">Usuario Demo</p>
-                            <p className="text-xs text-white/60 truncate">demo@example.com</p>
+                            <p className="text-sm font-medium text-white truncate">{user.full_name || 'Usuario'}</p>
+                            <p className="text-xs text-white/60 truncate">{user.email}</p>
                         </div>
                     </div>
                 )}
             </div>
-        </aside>
-    )
+            )
 }
