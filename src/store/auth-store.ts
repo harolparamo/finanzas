@@ -1,57 +1,57 @@
 import { create } from 'zustand'
 import { Profile } from '@/types/database'
-import { mockProfile } from '@/lib/mock-data'
+import { createClient } from '@/lib/supabase/client'
 
 interface AuthState {
     user: Profile | null
     isLoading: boolean
     isAuthenticated: boolean
+    error: string | null
     setUser: (user: Profile | null) => void
-    setLoading: (loading: boolean) => void
-    login: (email: string, password: string) => Promise<boolean>
-    logout: () => void
-    initMockAuth: () => void
+    login: (email: string, password: string) => Promise<void>
+    register: (email: string, password: string, fullName: string) => Promise<void>
+    logout: () => Promise<void>
     checkSession: () => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
     user: null,
     isLoading: true,
     isAuthenticated: false,
+    error: null,
 
     setUser: (user) => set({ user, isAuthenticated: !!user }),
-
-    setLoading: (isLoading) => set({ isLoading }),
 
     checkSession: async () => {
         set({ isLoading: true })
         try {
-            // Priority 1: Check Demo Mode
+            // 1. Check Demo Mode flag
             if (typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true') {
-                // const { mockUser } = await import('@/lib/mock-data') // Already imported
-                set({ user: mockUser, isAuthenticated: true, isLoading: false })
+                const { mockProfile } = await import('@/lib/mock-data')
+                set({ user: mockProfile, isAuthenticated: true, isLoading: false })
                 return
             }
 
-            // Priority 2: Online Check via API Proxy (Professional fix for Mixed Content)
+            // 2. Identify Environment (Online uses Proxy)
             const isOnline = typeof window !== 'undefined' &&
                 window.location.hostname !== 'localhost' &&
                 window.location.hostname !== '127.0.0.1'
 
             if (isOnline) {
                 const response = await fetch('/api/auth/session')
-                const { user } = await response.json()
-                if (user) {
-                    set({ user, isAuthenticated: true, isLoading: false })
-                    return
+                if (response.ok) {
+                    const { user } = await response.json()
+                    if (user) {
+                        set({ user, isAuthenticated: true })
+                        return
+                    }
                 }
             } else {
-                // Local check directly with Supabase
-                const { createClient } = await import('@/lib/supabase/client') // Moved import inside
+                // Local direct access
                 const supabase = createClient()
                 const { data: { session } } = await supabase.auth.getSession()
 
-                if (session?.user) { // Check session.user
+                if (session) {
                     const { data: profile } = await supabase
                         .from('profiles')
                         .select('*')
@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                         .single()
 
                     set({
-                        user: { ...session.user, ...profile },
+                        user: { ...session.user, ...profile } as Profile,
                         isAuthenticated: true,
                     })
                 }
@@ -71,39 +71,107 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
     },
 
-    login: async (email: string, password: string) => {
-        updated_at: new Date().toISOString()
-    },
-    isAuthenticated: true,
-    isLoading: false
-})
-            return true
+    login: async (email, password) => {
+        set({ isLoading: true, error: null })
+        try {
+            // Handle Demo User
+            if (email.toLowerCase() === 'demo@example.com') {
+                const { mockProfile } = await import('@/lib/mock-data')
+                set({ user: mockProfile, isAuthenticated: true })
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('demo_mode', 'true')
+                }
+                return
+            }
+
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+
+            if (isOnline) {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                })
+                const result = await response.json()
+                if (!response.ok) throw new Error(result.error || 'Login failed')
+
+                await get().checkSession()
+            } else {
+                const supabase = createClient()
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+                if (error) throw error
+
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single()
+
+                set({
+                    user: { ...data.user, ...profile } as Profile,
+                    isAuthenticated: true,
+                })
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
         }
-
-return false
     },
 
-logout: async () => {
-    if (typeof window !== 'undefined') {
-        localStorage.removeItem('demo_mode')
-    }
+    register: async (email, password, full_name) => {
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-    const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
+            if (isOnline) {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, full_name })
+                })
+                const result = await response.json()
+                if (!response.ok) throw new Error(result.error || 'Registration failed')
 
-    if (!useMockData) {
-        const { createClient } = await import('@/lib/supabase/client')
-        const supabase = createClient()
-        await supabase.auth.signOut()
-    }
+                await get().login(email, password)
+            } else {
+                const supabase = createClient()
+                const { error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { data: { full_name } },
+                })
+                if (error) throw error
+                await get().login(email, password)
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
+        }
+    },
 
-    set({ user: null, isAuthenticated: false })
-},
-
-    initMockAuth: () => {
-        const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
-        if (useMockData) {
-            set({ user: mockProfile, isAuthenticated: true, isLoading: false })
-        } else {
+    logout: async () => {
+        set({ isLoading: true })
+        try {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('demo_mode')
+            }
+            const supabase = createClient()
+            await supabase.auth.signOut()
+            set({ user: null, isAuthenticated: false })
+            if (typeof window !== 'undefined') {
+                window.location.href = '/'
+            }
+        } catch (error) {
+            console.error('Logout failed:', error)
+        } finally {
             set({ isLoading: false })
         }
     },
