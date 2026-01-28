@@ -3,7 +3,8 @@ import {
     Expense, Income, CreditCard, Budget, Goal, Category,
     ExpenseFormData, IncomeFormData, CreditCardFormData, BudgetFormData, GoalFormData
 } from '@/types/database'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../lib/supabase/client'
+import { useAuthStore } from './auth-store'
 
 interface DataState {
     expenses: Expense[]
@@ -55,16 +56,21 @@ export const useDataStore = create<DataState>((set, get) => ({
     fetchData: async () => {
         set({ isLoading: true, error: null })
 
-        // Get user from auth store
-        const { useAuthStore } = await import('@/store/auth-store')
         const user = useAuthStore.getState().user
+        const isDemoMode = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true'
+        const isDemoUser = user?.email?.toLowerCase() === 'demo@example.com'
 
         // Mock data loading if it's the demo user OR if global mock mode is ON
-        if (user?.email === 'demo@example.com' || process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+        if (isDemoUser || isDemoMode || process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
             try {
-                const { mockExpenses, mockIncome, mockCreditCards, mockBudgets, mockGoals, mockCategories } = await import('@/lib/mock-data')
+                // Ensure we get the latest mock data
+                const {
+                    mockExpenses, mockIncome, mockCreditCards,
+                    mockBudgets, mockGoals, mockCategories
+                } = await import('../lib/mock-data')
 
-                await new Promise(resolve => setTimeout(resolve, 800))
+                // Small delay to ensure smooth UI transitions
+                await new Promise(resolve => setTimeout(resolve, 500))
 
                 set({
                     expenses: mockExpenses,
@@ -77,8 +83,8 @@ export const useDataStore = create<DataState>((set, get) => ({
                 })
                 return
             } catch (e) {
-                console.error("Failed to load mock data", e)
-                set({ error: "Failed to load mock data", isLoading: false })
+                console.error("Critical: Failed to load mock data", e)
+                set({ error: "No se pudieron cargar los datos de prueba", isLoading: false })
                 return
             }
         }
