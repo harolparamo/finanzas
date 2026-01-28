@@ -51,6 +51,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     },
 
     login: async (email: string, password: string) => {
+        // ALWAYS use mock login for the demo email
+        if (email === 'demo@example.com') {
+            set({
+                user: { ...mockProfile, email },
+                isAuthenticated: true,
+                isLoading: false
+            })
+            return true
+        }
+
         const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
 
         if (useMockData) {

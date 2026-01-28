@@ -55,13 +55,15 @@ export const useDataStore = create<DataState>((set, get) => ({
     fetchData: async () => {
         set({ isLoading: true, error: null })
 
-        // Mock data loading
-        if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+        // Get user from auth store
+        const { useAuthStore } = await import('@/store/auth-store')
+        const user = useAuthStore.getState().user
+
+        // Mock data loading if it's the demo user OR if global mock mode is ON
+        if (user?.email === 'demo@example.com' || process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
             try {
-                // Dynamic import to avoid bundling mock data in production if not needed (though here we want it)
                 const { mockExpenses, mockIncome, mockCreditCards, mockBudgets, mockGoals, mockCategories } = await import('@/lib/mock-data')
 
-                // Simulate network latency for realism
                 await new Promise(resolve => setTimeout(resolve, 800))
 
                 set({
