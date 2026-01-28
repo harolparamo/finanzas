@@ -43,7 +43,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     const { user } = await response.json()
                     if (user) {
                         set({ user, isAuthenticated: true })
+                        if (typeof window !== 'undefined') {
+                            localStorage.setItem('auth_user', JSON.stringify(user))
+                        }
                         return
+                    }
+                }
+
+                // Fallback to localStorage if online session check fails
+                if (typeof window !== 'undefined') {
+                    const savedUser = localStorage.getItem('auth_user')
+                    if (savedUser) {
+                        try {
+                            const user = JSON.parse(savedUser)
+                            set({ user, isAuthenticated: true })
+                            console.log('[AuthStore] Session restored from localStorage')
+                        } catch (e) {
+                            localStorage.removeItem('auth_user')
+                        }
                     }
                 }
             } else {
@@ -99,6 +116,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
                 // Update state immediately with user + profile data
                 set({ user: result.user, isAuthenticated: true })
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('auth_user', JSON.stringify(result.user))
+                }
                 return true
             } else {
                 const supabase = createClient()
@@ -143,6 +163,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
                 // Set user and log them in
                 set({ user: result.user, isAuthenticated: true })
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('auth_user', JSON.stringify(result.user))
+                }
                 return true
             } else {
                 const supabase = createClient()
