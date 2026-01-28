@@ -40,7 +40,7 @@ export function createClient() {
                             ...options,
                             path: options.path || '/',
                             sameSite: options.sameSite || 'lax',
-                            secure: options.secure || process.env.NODE_ENV === 'production'
+                            secure: options.secure // Trust Supabase or browser defaults
                         })
                     } catch (error) {
                         console.error(`[Supabase Server] Error setting cookie: ${name}`, error)
@@ -55,7 +55,7 @@ export function createClient() {
                             ...options,
                             path: options.path || '/',
                             sameSite: options.sameSite || 'lax',
-                            secure: options.secure || process.env.NODE_ENV === 'production'
+                            secure: options.secure
                         })
                     } catch (error) {
                         console.error(`[Supabase Server] Error removing cookie: ${name}`, error)
