@@ -1,20 +1,20 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
     try {
         const { email, password, full_name } = await request.json()
         console.log(`[Proxy Register] Attempting for: ${email}`)
-        const supabase = createClient()
 
-        const { data, error } = await supabase.auth.signUp({
+        const adminClient = createServiceClient()
+
+        // Create user with admin client to bypass email confirmation
+        const { data, error } = await adminClient.auth.admin.createUser({
             email,
             password,
-            options: {
-                data: {
-                    full_name,
-                },
-            },
+            user_metadata: { full_name },
+            email_confirm: true
         })
 
         if (error) {
