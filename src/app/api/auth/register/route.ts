@@ -22,8 +22,16 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 400 })
         }
 
+        // Fetch profile (created by DB trigger usually)
+        const supabase = createServerClient()
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single()
+
         console.log(`[Proxy Register] Success for: ${email}`)
-        return NextResponse.json({ user: data.user })
+        return NextResponse.json({ user: { ...data.user, ...profile } })
     } catch (error: any) {
         console.error(`[Proxy Register] Fatal: ${error.message}`)
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })

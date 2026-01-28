@@ -43,8 +43,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 401 })
         }
 
+        // Fetch profile to return everything atomic
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single()
+
         console.log(`[Proxy Login] Success for: ${email}`)
-        return NextResponse.json({ user: data.user })
+        return NextResponse.json({ user: { ...data.user, ...profile } })
     } catch (error: any) {
         console.error(`[Proxy Login] Fatal: ${error.message}`)
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
