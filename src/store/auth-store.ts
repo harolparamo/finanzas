@@ -25,6 +25,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     checkSession: async () => {
         set({ isLoading: true })
+
+        // Check for local demo mode first
+        const isDemo = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true'
+        if (isDemo) {
+            set({
+                user: { ...mockProfile, email: 'demo@example.com' },
+                isAuthenticated: true,
+                isLoading: false
+            })
+            return
+        }
+
         const { createClient } = await import('@/lib/supabase/client')
         const supabase = createClient()
 
@@ -53,12 +65,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     login: async (email: string, password: string) => {
         // ALWAYS use mock login for the demo email
         if (email === 'demo@example.com') {
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('demo_mode', 'true')
+            }
             set({
                 user: { ...mockProfile, email },
                 isAuthenticated: true,
                 isLoading: false
             })
             return true
+        }
+
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('demo_mode')
         }
 
         const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
@@ -106,6 +125,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     },
 
     logout: async () => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('demo_mode')
+        }
+
         const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
 
         if (!useMockData) {
