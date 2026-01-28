@@ -265,107 +265,227 @@ export const useDataStore = create<DataState>((set, get) => ({
     },
 
     // Income Actions
-    addIncome: async (data) => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+    addIncome: async (income) => {
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-        const { data: newIncome, error } = await supabase
-            .from('income')
-            .insert({
-                user_id: user.id,
-                name: data.name,
-                amount: data.amount,
-                source: data.source || null,
-                notes: data.notes || null,
-                is_recurring: data.is_recurring || false,
-                income_date: data.income_date.toISOString().split('T')[0],
-                month: data.income_date.getMonth() + 1,
-                year: data.income_date.getFullYear(),
-            })
-            .select()
-            .single()
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'income', item: income })
+                })
+                const { data, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({ income: [data, ...state.income] }))
+            } else {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) return
 
-        if (error) throw error
-        if (newIncome) {
-            set((state) => ({ income: [newIncome, ...state.income] }))
+                const { data: newIncome, error } = await supabase
+                    .from('income')
+                    .insert({
+                        user_id: user.id,
+                        name: income.name,
+                        amount: income.amount,
+                        source: income.source || null,
+                        notes: income.notes || null,
+                        is_recurring: income.is_recurring || false,
+                        income_date: income.income_date.toISOString().split('T')[0],
+                        month: income.income_date.getMonth() + 1,
+                        year: income.income_date.getFullYear(),
+                    })
+                    .select()
+                    .single()
+
+                if (error) throw error
+                set((state) => ({ income: [newIncome, ...state.income] }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
         }
     },
 
     updateIncome: async (id, data) => {
-        const updateData: any = { ...data }
-        if (data.income_date) {
-            updateData.income_date = data.income_date.toISOString().split('T')[0]
-            updateData.month = data.income_date.getMonth() + 1
-            updateData.year = data.income_date.getFullYear()
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+
+            const updateData: any = { ...data }
+            if (data.income_date) {
+                updateData.income_date = data.income_date.toISOString().split('T')[0]
+                updateData.month = data.income_date.getMonth() + 1
+                updateData.year = data.income_date.getFullYear()
+            }
+
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'income', item: { id, ...updateData } })
+                })
+                const { data: updatedIncome, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({
+                    income: state.income.map(i => i.id === id ? updatedIncome : i)
+                }))
+            } else {
+                const { data: updatedIncome, error } = await supabase
+                    .from('income')
+                    .update(updateData)
+                    .eq('id', id)
+                    .select()
+                    .single()
+
+                if (error) throw error
+                set((state) => ({
+                    income: state.income.map(i => i.id === id ? updatedIncome : i)
+                }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
         }
-
-        const { data: updatedIncome, error } = await supabase
-            .from('income')
-            .update(updateData)
-            .eq('id', id)
-            .select()
-            .single()
-
-        if (error) throw error
-        set((state) => ({
-            income: state.income.map(i => i.id === id ? updatedIncome : i)
-        }))
     },
 
     deleteIncome: async (id) => {
-        const { error } = await supabase.from('income').delete().eq('id', id)
-        if (error) throw error
-        set((state) => ({
-            income: state.income.filter(i => i.id !== id)
-        }))
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+
+            if (isOnline) {
+                await fetch(`/api/data/proxy?table=income&id=${id}`, { method: 'DELETE' })
+                set((state) => ({ income: state.income.filter(i => i.id !== id) }))
+            } else {
+                const { error } = await supabase.from('income').delete().eq('id', id)
+                if (error) throw error
+                set((state) => ({ income: state.income.filter(i => i.id !== id) }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+        } finally {
+            set({ isLoading: false })
+        }
     },
 
     // Card Actions
-    addCard: async (data) => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+    addCard: async (card) => {
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-        const { data: newCard, error } = await supabase
-            .from('credit_cards')
-            .insert({
-                user_id: user.id,
-                name: data.name,
-                last_four_digits: data.last_four_digits || null,
-                bank_name: data.bank_name || null,
-                credit_limit: data.credit_limit || 0,
-                cut_off_day: data.cut_off_day || null,
-                payment_day: data.payment_day || null,
-                color: data.color || '#6366f1',
-            })
-            .select()
-            .single()
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'credit_cards', item: card })
+                })
+                const { data, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({ cards: [...state.cards, data] }))
+            } else {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) return
 
-        if (error) throw error
-        if (newCard) {
-            set((state) => ({ cards: [...state.cards, newCard] }))
+                const { data: newCard, error } = await supabase
+                    .from('credit_cards')
+                    .insert({
+                        user_id: user.id,
+                        name: card.name,
+                        last_four_digits: card.last_four_digits || null,
+                        bank_name: card.bank_name || null,
+                        credit_limit: card.credit_limit || 0,
+                        cut_off_day: card.cut_off_day || null,
+                        payment_day: card.payment_day || null,
+                        color: card.color || '#6366f1',
+                    })
+                    .select()
+                    .single()
+
+                if (error) throw error
+                set((state) => ({ cards: [...state.cards, newCard] }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
         }
     },
 
     updateCard: async (id, data) => {
-        const { data: updatedCard, error } = await supabase
-            .from('credit_cards')
-            .update(data)
-            .eq('id', id)
-            .select()
-            .single()
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-        if (error) throw error
-        set((state) => ({
-            cards: state.cards.map(c => c.id === id ? updatedCard : c)
-        }))
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'credit_cards', item: { id, ...data } })
+                })
+                const { data: updatedCard, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({
+                    cards: state.cards.map(c => c.id === id ? updatedCard : c)
+                }))
+            } else {
+                const { data: updatedCard, error } = await supabase
+                    .from('credit_cards')
+                    .update(data)
+                    .eq('id', id)
+                    .select()
+                    .single()
+
+                if (error) throw error
+                set((state) => ({
+                    cards: state.cards.map(c => c.id === id ? updatedCard : c)
+                }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
+        }
     },
 
     deleteCard: async (id) => {
-        const { error } = await supabase.from('credit_cards').delete().eq('id', id)
-        if (error) throw error
-        set((state) => ({
-            cards: state.cards.filter(c => c.id !== id)
-        }))
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+
+            if (isOnline) {
+                await fetch(`/api/data/proxy?table=credit_cards&id=${id}`, { method: 'DELETE' })
+                set((state) => ({ cards: state.cards.filter(c => c.id !== id) }))
+            } else {
+                const { error } = await supabase.from('credit_cards').delete().eq('id', id)
+                if (error) throw error
+                set((state) => ({ cards: state.cards.filter(c => c.id !== id) }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+        } finally {
+            set({ isLoading: false })
+        }
     },
 
     // Budget Actions
