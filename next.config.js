@@ -5,6 +5,9 @@ const nextConfig = {
     images: {
         domains: [],
     },
+    env: {
+        NEXT_PUBLIC_USE_MOCK_DATA: 'true',
+    },
 }
 
 module.exports = nextConfig

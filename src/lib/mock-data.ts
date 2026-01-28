@@ -76,40 +76,40 @@ export const mockCreditCards: CreditCard[] = [
 ]
 
 export const mockExpenses: Expense[] = [
-    { id: 'exp-1', user_id: MOCK_USER_ID, category_id: 'cat-1', credit_card_id: null, name: 'Rappi - Almuerzo', amount: 45000, payment_method: 'cash', expense_date: '2025-01-20', month: 1, year: 2025, notes: null, is_recurring: false, created_at: '2025-01-20', updated_at: '2025-01-20', category: mockCategories[0] },
-    { id: 'exp-2', user_id: MOCK_USER_ID, category_id: 'cat-2', credit_card_id: null, name: 'Éxito - Mercado semanal', amount: 280000, payment_method: 'cash', expense_date: '2025-01-18', month: 1, year: 2025, notes: 'Mercado de la semana', is_recurring: false, created_at: '2025-01-18', updated_at: '2025-01-18', category: mockCategories[1] },
-    { id: 'exp-3', user_id: MOCK_USER_ID, category_id: 'cat-5', credit_card_id: 'card-1', name: 'Netflix', amount: 44900, payment_method: 'card', expense_date: '2025-01-15', month: 1, year: 2025, notes: 'Plan Premium', is_recurring: true, created_at: '2025-01-15', updated_at: '2025-01-15', category: mockCategories[4], credit_card: mockCreditCards[0] },
-    { id: 'exp-4', user_id: MOCK_USER_ID, category_id: 'cat-5', credit_card_id: 'card-1', name: 'Spotify', amount: 29900, payment_method: 'card', expense_date: '2025-01-15', month: 1, year: 2025, notes: 'Plan Individual', is_recurring: true, created_at: '2025-01-15', updated_at: '2025-01-15', category: mockCategories[4], credit_card: mockCreditCards[0] },
-    { id: 'exp-5', user_id: MOCK_USER_ID, category_id: 'cat-7', credit_card_id: null, name: 'Servicios públicos', amount: 180000, payment_method: 'cash', expense_date: '2025-01-10', month: 1, year: 2025, notes: 'Agua, luz, gas', is_recurring: true, created_at: '2025-01-10', updated_at: '2025-01-10', category: mockCategories[6] },
-    { id: 'exp-6', user_id: MOCK_USER_ID, category_id: 'cat-6', credit_card_id: 'card-2', name: 'Amazon - Compra online', amount: 750000, payment_method: 'card', expense_date: '2025-01-03', month: 1, year: 2025, notes: 'Accesorios tecnología', is_recurring: false, created_at: '2025-01-03', updated_at: '2025-01-03', category: mockCategories[5], credit_card: mockCreditCards[1] },
-    { id: 'exp-7', user_id: MOCK_USER_ID, category_id: 'cat-9', credit_card_id: null, name: 'Farmacia', amount: 85000, payment_method: 'cash', expense_date: '2025-01-08', month: 1, year: 2025, notes: 'Medicamentos', is_recurring: false, created_at: '2025-01-08', updated_at: '2025-01-08', category: mockCategories[8] },
-    { id: 'exp-8', user_id: MOCK_USER_ID, category_id: 'cat-3', credit_card_id: 'card-1', name: 'Cuota carro', amount: 850000, payment_method: 'card', expense_date: '2025-01-05', month: 1, year: 2025, notes: 'Cuota 12 de 48', is_recurring: true, created_at: '2025-01-05', updated_at: '2025-01-05', category: mockCategories[2], credit_card: mockCreditCards[0] },
+    { id: 'exp-1', user_id: MOCK_USER_ID, category_id: 'cat-1', credit_card_id: null, name: 'Rappi - Almuerzo', amount: 45000, payment_method: 'cash', expense_date: '2026-01-20', month: 1, year: 2026, notes: null, is_recurring: false, created_at: '2026-01-20', updated_at: '2026-01-20', category: mockCategories[0] },
+    { id: 'exp-2', user_id: MOCK_USER_ID, category_id: 'cat-2', credit_card_id: null, name: 'Éxito - Mercado semanal', amount: 280000, payment_method: 'cash', expense_date: '2026-01-18', month: 1, year: 2026, notes: 'Mercado de la semana', is_recurring: false, created_at: '2026-01-18', updated_at: '2026-01-18', category: mockCategories[1] },
+    { id: 'exp-3', user_id: MOCK_USER_ID, category_id: 'cat-5', credit_card_id: 'card-1', name: 'Netflix', amount: 44900, payment_method: 'card', expense_date: '2026-01-15', month: 1, year: 2026, notes: 'Plan Premium', is_recurring: true, created_at: '2026-01-15', updated_at: '2026-01-15', category: mockCategories[4], credit_card: mockCreditCards[0] },
+    { id: 'exp-4', user_id: MOCK_USER_ID, category_id: 'cat-5', credit_card_id: 'card-1', name: 'Spotify', amount: 29900, payment_method: 'card', expense_date: '2026-01-15', month: 1, year: 2026, notes: 'Plan Individual', is_recurring: true, created_at: '2026-01-15', updated_at: '2026-01-15', category: mockCategories[4], credit_card: mockCreditCards[0] },
+    { id: 'exp-5', user_id: MOCK_USER_ID, category_id: 'cat-7', credit_card_id: null, name: 'Servicios públicos', amount: 180000, payment_method: 'cash', expense_date: '2026-01-10', month: 1, year: 2026, notes: 'Agua, luz, gas', is_recurring: true, created_at: '2026-01-10', updated_at: '2026-01-10', category: mockCategories[6] },
+    { id: 'exp-6', user_id: MOCK_USER_ID, category_id: 'cat-6', credit_card_id: 'card-2', name: 'Amazon - Compra online', amount: 750000, payment_method: 'card', expense_date: '2026-01-03', month: 1, year: 2026, notes: 'Accesorios tecnología', is_recurring: false, created_at: '2026-01-03', updated_at: '2026-01-03', category: mockCategories[5], credit_card: mockCreditCards[1] },
+    { id: 'exp-7', user_id: MOCK_USER_ID, category_id: 'cat-9', credit_card_id: null, name: 'Farmacia', amount: 85000, payment_method: 'cash', expense_date: '2026-01-08', month: 1, year: 2026, notes: 'Medicamentos', is_recurring: false, created_at: '2026-01-08', updated_at: '2026-01-08', category: mockCategories[8] },
+    { id: 'exp-8', user_id: MOCK_USER_ID, category_id: 'cat-3', credit_card_id: 'card-1', name: 'Cuota carro', amount: 850000, payment_method: 'card', expense_date: '2026-01-05', month: 1, year: 2026, notes: 'Cuota 12 de 48', is_recurring: true, created_at: '2026-01-05', updated_at: '2026-01-05', category: mockCategories[2], credit_card: mockCreditCards[0] },
 ]
 
 export const mockIncome: Income[] = [
-    { id: 'inc-1', user_id: MOCK_USER_ID, name: 'Salario', amount: 8500000, income_date: '2025-01-01', month: 1, year: 2025, source: 'Empresa XYZ', notes: 'Salario mensual', is_recurring: true, created_at: '2025-01-01', updated_at: '2025-01-01' },
-    { id: 'inc-2', user_id: MOCK_USER_ID, name: 'Freelance - Proyecto web', amount: 1500000, income_date: '2025-01-15', month: 1, year: 2025, source: 'Cliente ABC', notes: 'Desarrollo landing page', is_recurring: false, created_at: '2025-01-15', updated_at: '2025-01-15' },
-    { id: 'inc-3', user_id: MOCK_USER_ID, name: 'Dividendos', amount: 320000, income_date: '2025-01-20', month: 1, year: 2025, source: 'Inversiones', notes: 'Rendimientos del mes', is_recurring: false, created_at: '2025-01-20', updated_at: '2025-01-20' },
+    { id: 'inc-1', user_id: MOCK_USER_ID, name: 'Salario', amount: 8500000, income_date: '2026-01-01', month: 1, year: 2026, source: 'Empresa XYZ', notes: 'Salario mensual', is_recurring: true, created_at: '2026-01-01', updated_at: '2026-01-01' },
+    { id: 'inc-2', user_id: MOCK_USER_ID, name: 'Freelance - Proyecto web', amount: 1500000, income_date: '2026-01-15', month: 1, year: 2026, source: 'Cliente ABC', notes: 'Desarrollo landing page', is_recurring: false, created_at: '2026-01-15', updated_at: '2026-01-15' },
+    { id: 'inc-3', user_id: MOCK_USER_ID, name: 'Dividendos', amount: 320000, income_date: '2026-01-20', month: 1, year: 2026, source: 'Inversiones', notes: 'Rendimientos del mes', is_recurring: false, created_at: '2026-01-20', updated_at: '2026-01-20' },
 ]
 
 export const mockBudgets: Budget[] = [
-    { id: 'bud-1', user_id: MOCK_USER_ID, category_id: 'cat-1', amount: 200000, month: 1, year: 2025, created_at: '2025-01-01', updated_at: '2025-01-01', category: mockCategories[0] },
-    { id: 'bud-2', user_id: MOCK_USER_ID, category_id: 'cat-2', amount: 800000, month: 1, year: 2025, created_at: '2025-01-01', updated_at: '2025-01-01', category: mockCategories[1] },
-    { id: 'bud-3', user_id: MOCK_USER_ID, category_id: 'cat-5', amount: 150000, month: 1, year: 2025, created_at: '2025-01-01', updated_at: '2025-01-01', category: mockCategories[4] },
-    { id: 'bud-4', user_id: MOCK_USER_ID, category_id: 'cat-6', amount: 500000, month: 1, year: 2025, created_at: '2025-01-01', updated_at: '2025-01-01', category: mockCategories[5] },
-    { id: 'bud-5', user_id: MOCK_USER_ID, category_id: 'cat-7', amount: 300000, month: 1, year: 2025, created_at: '2025-01-01', updated_at: '2025-01-01', category: mockCategories[6] },
+    { id: 'bud-1', user_id: MOCK_USER_ID, category_id: 'cat-1', amount: 200000, month: 1, year: 2026, created_at: '2026-01-01', updated_at: '2026-01-01', category: mockCategories[0] },
+    { id: 'bud-2', user_id: MOCK_USER_ID, category_id: 'cat-2', amount: 800000, month: 1, year: 2026, created_at: '2026-01-01', updated_at: '2026-01-01', category: mockCategories[1] },
+    { id: 'bud-3', user_id: MOCK_USER_ID, category_id: 'cat-5', amount: 150000, month: 1, year: 2026, created_at: '2026-01-01', updated_at: '2026-01-01', category: mockCategories[4] },
+    { id: 'bud-4', user_id: MOCK_USER_ID, category_id: 'cat-6', amount: 500000, month: 1, year: 2026, created_at: '2026-01-01', updated_at: '2026-01-01', category: mockCategories[5] },
+    { id: 'bud-5', user_id: MOCK_USER_ID, category_id: 'cat-7', amount: 300000, month: 1, year: 2026, created_at: '2026-01-01', updated_at: '2026-01-01', category: mockCategories[6] },
 ]
 
 export const mockGoals: Goal[] = [
-    { id: 'goal-1', user_id: MOCK_USER_ID, name: 'Home', target_amount: 20000000, current_amount: 15000000, target_date: '2025-12-31', color: '#ef4444', icon: 'home', is_completed: false, completed_at: null, created_at: '2024-01-01', updated_at: '2025-01-15' },
-    { id: 'goal-2', user_id: MOCK_USER_ID, name: 'Emergency Fund', target_amount: 15000000, current_amount: 7500000, target_date: '2025-06-30', color: '#f97316', icon: 'shield', is_completed: false, completed_at: null, created_at: '2024-01-01', updated_at: '2025-01-10' },
-    { id: 'goal-3', user_id: MOCK_USER_ID, name: 'Vacation', target_amount: 5000000, current_amount: 2000000, target_date: '2025-07-01', color: '#22c55e', icon: 'plane', is_completed: false, completed_at: null, created_at: '2024-06-01', updated_at: '2025-01-05' },
+    { id: 'goal-1', user_id: MOCK_USER_ID, name: 'Home', target_amount: 20000000, current_amount: 15000000, target_date: '2026-12-31', color: '#ef4444', icon: 'home', is_completed: false, completed_at: null, created_at: '2025-01-01', updated_at: '2026-01-15' },
+    { id: 'goal-2', user_id: MOCK_USER_ID, name: 'Emergency Fund', target_amount: 15000000, current_amount: 7500000, target_date: '2026-06-30', color: '#f97316', icon: 'shield', is_completed: false, completed_at: null, created_at: '2025-01-01', updated_at: '2026-01-10' },
+    { id: 'goal-3', user_id: MOCK_USER_ID, name: 'Vacation', target_amount: 5000000, current_amount: 2000000, target_date: '2026-07-01', color: '#22c55e', icon: 'plane', is_completed: false, completed_at: null, created_at: '2025-06-01', updated_at: '2026-01-05' },
 ]
 
 export const mockGoalContributions: GoalContribution[] = [
-    { id: 'cont-1', user_id: MOCK_USER_ID, goal_id: 'goal-1', amount: 1000000, contribution_date: '2025-01-15', notes: 'Aporte mensual', created_at: '2025-01-15' },
-    { id: 'cont-2', user_id: MOCK_USER_ID, goal_id: 'goal-2', amount: 500000, contribution_date: '2025-01-10', notes: 'Aporte quincenal', created_at: '2025-01-10' },
-    { id: 'cont-3', user_id: MOCK_USER_ID, goal_id: 'goal-3', amount: 300000, contribution_date: '2025-01-05', notes: null, created_at: '2025-01-05' },
+    { id: 'cont-1', user_id: MOCK_USER_ID, goal_id: 'goal-1', amount: 1000000, contribution_date: '2026-01-15', notes: 'Aporte mensual', created_at: '2026-01-15' },
+    { id: 'cont-2', user_id: MOCK_USER_ID, goal_id: 'goal-2', amount: 500000, contribution_date: '2026-01-10', notes: 'Aporte quincenal', created_at: '2026-01-10' },
+    { id: 'cont-3', user_id: MOCK_USER_ID, goal_id: 'goal-3', amount: 300000, contribution_date: '2026-01-05', notes: null, created_at: '2026-01-05' },
 ]
 
 export function getMockMonthlySummary(): MonthlySummary {
