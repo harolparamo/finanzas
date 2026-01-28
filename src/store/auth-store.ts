@@ -191,6 +191,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
             if (typeof window !== 'undefined') {
                 localStorage.removeItem('demo_mode')
+                localStorage.removeItem('auth_user')
             }
             const supabase = createClient()
             await supabase.auth.signOut()
