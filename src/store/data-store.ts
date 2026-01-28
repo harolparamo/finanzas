@@ -489,127 +489,277 @@ export const useDataStore = create<DataState>((set, get) => ({
     },
 
     // Budget Actions
-    addBudget: async (data) => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+    addBudget: async (budget) => {
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-        const { data: newBudget, error } = await supabase
-            .from('budgets')
-            .insert({
-                user_id: user.id,
-                category_id: data.category_id,
-                amount: data.amount,
-                month: data.month,
-                year: data.year,
-            })
-            .select('*, category:categories(*)')
-            .single()
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'budgets', item: budget })
+                })
+                const { data, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({ budgets: [...state.budgets, data] }))
+            } else {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) return
 
-        if (error) throw error
-        if (newBudget) {
-            set((state) => ({ budgets: [...state.budgets, newBudget] }))
+                const { data: newBudget, error } = await supabase
+                    .from('budgets')
+                    .insert({
+                        user_id: user.id,
+                        category_id: budget.category_id,
+                        amount: budget.amount,
+                        month: budget.month,
+                        year: budget.year,
+                    })
+                    .select('*, category:categories(*)')
+                    .single()
+
+                if (error) throw error
+                set((state) => ({ budgets: [...state.budgets, newBudget] }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
         }
     },
 
     updateBudget: async (id, data) => {
-        const { data: updatedBudget, error } = await supabase
-            .from('budgets')
-            .update(data)
-            .eq('id', id)
-            .select('*, category:categories(*)')
-            .single()
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-        if (error) throw error
-        set((state) => ({
-            budgets: state.budgets.map(b => b.id === id ? updatedBudget : b)
-        }))
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'budgets', item: { id, ...data } })
+                })
+                const { data: updatedBudget, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({
+                    budgets: state.budgets.map(b => b.id === id ? updatedBudget : b)
+                }))
+            } else {
+                const { data: updatedBudget, error } = await supabase
+                    .from('budgets')
+                    .update(data)
+                    .eq('id', id)
+                    .select('*, category:categories(*)')
+                    .single()
+
+                if (error) throw error
+                set((state) => ({
+                    budgets: state.budgets.map(b => b.id === id ? updatedBudget : b)
+                }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
+        }
     },
 
     deleteBudget: async (id) => {
-        const { error } = await supabase.from('budgets').delete().eq('id', id)
-        if (error) throw error
-        set((state) => ({
-            budgets: state.budgets.filter(b => b.id !== id)
-        }))
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+
+            if (isOnline) {
+                await fetch(`/api/data/proxy?table=budgets&id=${id}`, { method: 'DELETE' })
+                set((state) => ({ budgets: state.budgets.filter(b => b.id !== id) }))
+            } else {
+                const { error } = await supabase.from('budgets').delete().eq('id', id)
+                if (error) throw error
+                set((state) => ({ budgets: state.budgets.filter(b => b.id !== id) }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+        } finally {
+            set({ isLoading: false })
+        }
     },
 
     // Goal Actions
-    addGoal: async (data) => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+    addGoal: async (goal) => {
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-        const { data: newGoal, error } = await supabase
-            .from('goals')
-            .insert({
-                user_id: user.id,
-                name: data.name,
-                target_amount: data.target_amount,
-                target_date: data.target_date?.toISOString().split('T')[0] || null,
-                color: data.color || '#22c55e',
-                icon: data.icon || 'target',
-            })
-            .select()
-            .single()
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'goals', item: goal })
+                })
+                const { data, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({ goals: [...state.goals, data] }))
+            } else {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) return
 
-        if (error) throw error
-        if (newGoal) {
-            set((state) => ({ goals: [...state.goals, newGoal] }))
+                const { data: newGoal, error } = await supabase
+                    .from('goals')
+                    .insert({
+                        user_id: user.id,
+                        name: goal.name,
+                        target_amount: goal.target_amount,
+                        target_date: goal.target_date?.toISOString().split('T')[0] || null,
+                        color: goal.color || '#22c55e',
+                        icon: goal.icon || 'target',
+                    })
+                    .select()
+                    .single()
+
+                if (error) throw error
+                set((state) => ({ goals: [...state.goals, newGoal] }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
         }
     },
 
     updateGoal: async (id, data) => {
-        const updateData: any = { ...data }
-        if (data.target_date) {
-            updateData.target_date = data.target_date.toISOString().split('T')[0]
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+
+            const updateData: any = { ...data }
+            if (data.target_date) {
+                updateData.target_date = data.target_date.toISOString().split('T')[0]
+            }
+
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'goals', item: { id, ...updateData } })
+                })
+                const { data: updatedGoal, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({
+                    goals: state.goals.map(g => g.id === id ? updatedGoal : g)
+                }))
+            } else {
+                const { data: updatedGoal, error } = await supabase
+                    .from('goals')
+                    .update(updateData)
+                    .eq('id', id)
+                    .select()
+                    .single()
+
+                if (error) throw error
+                set((state) => ({
+                    goals: state.goals.map(g => g.id === id ? updatedGoal : g)
+                }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
         }
-
-        const { data: updatedGoal, error } = await supabase
-            .from('goals')
-            .update(updateData)
-            .eq('id', id)
-            .select()
-            .single()
-
-        if (error) throw error
-        set((state) => ({
-            goals: state.goals.map(g => g.id === id ? updatedGoal : g)
-        }))
     },
 
     deleteGoal: async (id) => {
-        const { error } = await supabase.from('goals').delete().eq('id', id)
-        if (error) throw error
-        set((state) => ({
-            goals: state.goals.filter(g => g.id !== id)
-        }))
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+
+            if (isOnline) {
+                await fetch(`/api/data/proxy?table=goals&id=${id}`, { method: 'DELETE' })
+                set((state) => ({ goals: state.goals.filter(g => g.id !== id) }))
+            } else {
+                const { error } = await supabase.from('goals').delete().eq('id', id)
+                if (error) throw error
+                set((state) => ({ goals: state.goals.filter(g => g.id !== id) }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+        } finally {
+            set({ isLoading: false })
+        }
     },
 
     addContribution: async (goalId, amount) => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-        const { error } = await supabase
-            .from('goal_contributions')
-            .insert({
-                user_id: user.id,
-                goal_id: goalId,
-                amount: amount,
-                contribution_date: new Date().toISOString().split('T')[0]
-            })
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'goal_contributions',
+                        item: { goal_id: goalId, amount, contribution_date: new Date().toISOString().split('T')[0] }
+                    })
+                })
+                const { error } = await response.json()
+                if (error) throw new Error(error)
 
-        if (error) throw error
+                // Refresh specific goal
+                const goalResponse = await fetch(`/api/data/proxy?table=goals&id=${goalId}`)
+                const { data: updatedGoal } = await goalResponse.json()
+                if (updatedGoal) {
+                    set((state) => ({ goals: state.goals.map(g => g.id === goalId ? updatedGoal : g) }))
+                }
+            } else {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) return
 
-        // Refresh goals to get updated current_amount (handled by DB trigger)
-        const { data: updatedGoal } = await supabase
-            .from('goals')
-            .select('*')
-            .eq('id', goalId)
-            .single()
+                const { error } = await supabase
+                    .from('goal_contributions')
+                    .insert({
+                        user_id: user.id,
+                        goal_id: goalId,
+                        amount: amount,
+                        contribution_date: new Date().toISOString().split('T')[0]
+                    })
 
-        if (updatedGoal) {
-            set((state) => ({
-                goals: state.goals.map(g => g.id === goalId ? updatedGoal : g)
-            }))
+                if (error) throw error
+
+                const { data: updatedGoal } = await supabase
+                    .from('goals')
+                    .select('*')
+                    .eq('id', goalId)
+                    .single()
+
+                if (updatedGoal) {
+                    set((state) => ({
+                        goals: state.goals.map(g => g.id === goalId ? updatedGoal : g)
+                    }))
+                }
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+        } finally {
+            set({ isLoading: false })
         }
     }
 }))
