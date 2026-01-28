@@ -25,120 +25,79 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     checkSession: async () => {
         set({ isLoading: true })
+        try {
+            // Priority 1: Check Demo Mode
+            if (typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true') {
+                // const { mockUser } = await import('@/lib/mock-data') // Already imported
+                set({ user: mockUser, isAuthenticated: true, isLoading: false })
+                return
+            }
 
-        // Check for local demo mode first
-        const isDemo = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true'
-        if (isDemo) {
-            set({
-                user: { ...mockProfile, email: 'demo@example.com' },
-                isAuthenticated: true,
-                isLoading: false
-            })
-            return
-        }
+            // Priority 2: Online Check via API Proxy (Professional fix for Mixed Content)
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-        const { createClient } = await import('@/lib/supabase/client')
-        const supabase = createClient()
+            if (isOnline) {
+                const response = await fetch('/api/auth/session')
+                const { user } = await response.json()
+                if (user) {
+                    set({ user, isAuthenticated: true, isLoading: false })
+                    return
+                }
+            } else {
+                // Local check directly with Supabase
+                const { createClient } = await import('@/lib/supabase/client') // Moved import inside
+                const supabase = createClient()
+                const { data: { session } } = await supabase.auth.getSession()
 
-        const { data: { session } } = await supabase.auth.getSession()
+                if (session?.user) { // Check session.user
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single()
 
-        if (session?.user) {
-            set({
-                user: {
-                    id: session.user.id,
-                    email: session.user.email || '',
-                    full_name: session.user.user_metadata.full_name || 'Usuario',
-                    avatar_url: session.user.user_metadata.avatar_url || null,
-                    currency: 'USD',
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-                    created_at: session.user.created_at,
-                    updated_at: new Date().toISOString()
-                },
-                isAuthenticated: true,
-                isLoading: false
-            })
-        } else {
-            set({ user: null, isAuthenticated: false, isLoading: false })
+                    set({
+                        user: { ...session.user, ...profile },
+                        isAuthenticated: true,
+                    })
+                }
+            }
+        } catch (error) {
+            console.error('Session check failed:', error)
+        } finally {
+            set({ isLoading: false })
         }
     },
 
     login: async (email: string, password: string) => {
-        // ALWAYS use mock login for the demo email
-        if (email === 'demo@example.com') {
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('demo_mode', 'true')
-            }
-            set({
-                user: { ...mockProfile, email },
-                isAuthenticated: true,
-                isLoading: false
-            })
+        updated_at: new Date().toISOString()
+    },
+    isAuthenticated: true,
+    isLoading: false
+})
             return true
         }
 
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('demo_mode')
-        }
+return false
+    },
 
-        const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
+logout: async () => {
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem('demo_mode')
+    }
 
-        if (useMockData) {
-            set({ user: { ...mockProfile, email }, isAuthenticated: true, isLoading: false })
-            return true
-        }
+    const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
 
-        // Real Supabase auth
+    if (!useMockData) {
         const { createClient } = await import('@/lib/supabase/client')
         const supabase = createClient()
+        await supabase.auth.signOut()
+    }
 
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        })
-
-        if (error) {
-            console.error('Login error:', error.message)
-            return false
-        }
-
-        if (data.user) {
-            // Here you would typically fetch the profile from your 'profiles' table
-            // For now, we'll map the auth user to our Profile type
-            set({
-                user: {
-                    id: data.user.id,
-                    email: data.user.email || '',
-                    full_name: data.user.user_metadata.full_name || 'Usuario',
-                    avatar_url: data.user.user_metadata.avatar_url || null,
-                    currency: 'USD', // Default currency
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', // Default timezone
-                    created_at: data.user.created_at,
-                    updated_at: new Date().toISOString()
-                },
-                isAuthenticated: true,
-                isLoading: false
-            })
-            return true
-        }
-
-        return false
-    },
-
-    logout: async () => {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('demo_mode')
-        }
-
-        const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
-
-        if (!useMockData) {
-            const { createClient } = await import('@/lib/supabase/client')
-            const supabase = createClient()
-            await supabase.auth.signOut()
-        }
-
-        set({ user: null, isAuthenticated: false })
-    },
+    set({ user: null, isAuthenticated: false })
+},
 
     initMockAuth: () => {
         const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'

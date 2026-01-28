@@ -54,98 +54,145 @@ export const useDataStore = create<DataState>((set, get) => ({
 
     fetchData: async () => {
         set({ isLoading: true, error: null })
+        try {
+            const authStore = (await import('./auth-store')).useAuthStore.getState()
+            const user = authStore.user
 
-        const { useAuthStore } = await import('./auth-store')
-        const user = useAuthStore.getState().user
-        const isDemoMode = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true'
-        const isDemoUser = user?.email?.toLowerCase() === 'demo@example.com'
+            // Check for Demo Mode flag in localStorage
+            const isDemoMode = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true'
+            const isDemoUser = user?.email?.toLowerCase() === 'demo@example.com' || isDemoMode
 
-        // Mock data loading if it's the demo user OR if global mock mode is ON
-        if (isDemoUser || isDemoMode || process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-            try {
-                // Ensure we get the latest mock data
+            if (isDemoUser) {
+                // Ensure auth state is consistent if refresh happened in demo mode
+                if (isDemoMode && !user) {
+                    await authStore.checkSession()
+                }
+
                 const {
-                    mockExpenses, mockIncome, mockCreditCards,
-                    mockBudgets, mockGoals, mockCategories
-                } = await import('../lib/mock-data')
+                    mockExpenses,
+                    mockIncome,
+                    mockCreditCards: mockCards,
+                    mockBudgets,
+                    mockGoals,
+                    mockCategories
+                } = await import('@/lib/mock-data')
 
-                // Small delay to ensure smooth UI transitions
+                // Simulate network delay for realistic feel
                 await new Promise(resolve => setTimeout(resolve, 500))
 
                 set({
                     expenses: mockExpenses,
                     income: mockIncome,
-                    cards: mockCreditCards,
+                    cards: mockCards,
                     budgets: mockBudgets,
                     goals: mockGoals,
                     categories: mockCategories,
                     isLoading: false
                 })
                 return
-            } catch (e) {
-                console.error("Critical: Failed to load mock data", e)
-                set({ error: "No se pudieron cargar los datos de prueba", isLoading: false })
-                return
             }
-        }
 
-        try {
-            const [
-                { data: expenses },
-                { data: income },
-                { data: cards },
-                { data: budgets },
-                { data: goals },
-                { data: categories }
-            ] = await Promise.all([
-                supabase.from('expenses').select('*, category:categories(*), credit_card:credit_cards(*)').order('expense_date', { ascending: false }),
-                supabase.from('income').select('*').order('income_date', { ascending: false }),
-                supabase.from('credit_cards').select('*').order('created_at', { ascending: true }),
-                supabase.from('budgets').select('*, category:categories(*)'),
-                supabase.from('goals').select('*').order('created_at', { ascending: true }),
-                supabase.from('categories').select('*').order('sort_order', { ascending: true })
-            ])
+            // Real User Fetching
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-            set({
-                expenses: expenses || [],
-                income: income || [],
-                cards: cards || [],
-                budgets: budgets || [],
-                goals: goals || [],
-                categories: categories || [],
-                isLoading: false
-            })
+            if (isOnline) {
+                // Fetch via Proxy
+                const tables = ['expenses', 'income', 'credit_cards', 'budgets', 'goals', 'categories']
+                const results = await Promise.all(
+                    tables.map(t => fetch(`/api/data/proxy?table=${t === 'credit_cards' ? 'credit_cards' : t}`).then(r => r.json()))
+                )
+
+                set({
+                    expenses: results[0].data || [],
+                    income: results[1].data || [],
+                    cards: results[2].data || [],
+                    budgets: results[3].data || [],
+                    goals: results[4].data || [],
+                    categories: results[5].data || [],
+                })
+            } else {
+                // Local Direct Fetch
+                const supabase = createClient()
+                const [
+                    { data: expenses },
+                    { data: income },
+                    { data: cards },
+                    { data: budgets },
+                    { data: goals },
+                    { data: categories }
+                ] = await Promise.all([
+                    supabase.from('expenses').select('*, category:categories(*), credit_card:credit_cards(*)').order('expense_date', { ascending: false }),
+                    supabase.from('income').select('*').order('income_date', { ascending: false }),
+                    supabase.from('credit_cards').select('*').order('created_at', { ascending: true }),
+                    supabase.from('budgets').select('*, category:categories(*)'),
+                    supabase.from('goals').select('*').order('created_at', { ascending: true }),
+                    supabase.from('categories').select('*').order('sort_order', { ascending: true })
+                ])
+
+                set({
+                    expenses: expenses || [],
+                    income: income || [],
+                    cards: cards || [],
+                    budgets: budgets || [],
+                    goals: goals || [],
+                    categories: categories || []
+                })
+            }
         } catch (error: any) {
-            set({ error: error.message, isLoading: false })
+            set({ error: error.message })
+        } finally {
+            set({ isLoading: false })
         }
     },
 
     // Expense Actions
-    addExpense: async (data) => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+    addExpense: async (expense) => {
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
 
-        const { data: newExpense, error } = await supabase
-            .from('expenses')
-            .insert({
-                user_id: user.id,
-                name: data.name,
-                amount: data.amount,
-                category_id: data.category_id || null,
-                credit_card_id: data.credit_card_id || null,
-                payment_method: data.payment_method,
-                notes: data.notes || null,
-                is_recurring: data.is_recurring || false,
-                expense_date: data.expense_date.toISOString().split('T')[0],
-                month: data.expense_date.getMonth() + 1,
-                year: data.expense_date.getFullYear(),
-            })
-            .select('*, category:categories(*), credit_card:credit_cards(*)')
-            .single()
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'expenses', item: expense })
+                })
+                const { data, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({ expenses: [data, ...state.expenses] }))
+            } else {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) return
 
-        if (error) throw error
-        if (newExpense) {
-            set((state) => ({ expenses: [newExpense, ...state.expenses] }))
+                const { data: newExpense, error } = await supabase
+                    .from('expenses')
+                    .insert({
+                        user_id: user.id,
+                        name: expense.name,
+                        amount: expense.amount,
+                        category_id: expense.category_id || null,
+                        credit_card_id: expense.credit_card_id || null,
+                        payment_method: expense.payment_method,
+                        notes: expense.notes || null,
+                        is_recurring: expense.is_recurring || false,
+                        expense_date: expense.expense_date.toISOString().split('T')[0],
+                        month: expense.expense_date.getMonth() + 1,
+                        year: expense.expense_date.getFullYear(),
+                    })
+                    .select('*, category:categories(*), credit_card:credit_cards(*)')
+                    .single()
+                if (error) throw error
+                set((state) => ({ expenses: [newExpense, ...state.expenses] }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
         }
     },
 
