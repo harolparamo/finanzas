@@ -97,7 +97,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const result = await response.json()
                 if (!response.ok) throw new Error(result.error || 'Login failed')
 
-                await get().checkSession()
+                // Update state immediately with user + profile data
+                set({ user: result.user, isAuthenticated: true })
                 return true
             } else {
                 const supabase = createClient()
@@ -140,7 +141,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const result = await response.json()
                 if (!response.ok) throw new Error(result.error || 'Registration failed')
 
-                return await get().login(email, password)
+                // Set user and log them in
+                set({ user: result.user, isAuthenticated: true })
+                return true
             } else {
                 const supabase = createClient()
                 const { error } = await supabase.auth.signUp({
