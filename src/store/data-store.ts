@@ -197,32 +197,71 @@ export const useDataStore = create<DataState>((set, get) => ({
     },
 
     updateExpense: async (id, data) => {
-        const updateData: any = { ...data }
-        if (data.expense_date) {
-            updateData.expense_date = data.expense_date.toISOString().split('T')[0]
-            updateData.month = data.expense_date.getMonth() + 1
-            updateData.year = data.expense_date.getFullYear()
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+
+            const updateData: any = { ...data }
+            if (data.expense_date) {
+                updateData.expense_date = data.expense_date.toISOString().split('T')[0]
+                updateData.month = data.expense_date.getMonth() + 1
+                updateData.year = data.expense_date.getFullYear()
+            }
+
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST', // Using POST for update in our proxy implementation for simplicity
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'expenses', item: { id, ...updateData } })
+                })
+                const { data: updatedExpense, error } = await response.json()
+                if (error) throw new Error(error)
+                set((state) => ({
+                    expenses: state.expenses.map(e => e.id === id ? updatedExpense : e)
+                }))
+            } else {
+                const { data: updatedExpense, error } = await supabase
+                    .from('expenses')
+                    .update(updateData)
+                    .eq('id', id)
+                    .select('*, category:categories(*), credit_card:credit_cards(*)')
+                    .single()
+
+                if (error) throw error
+                set((state) => ({
+                    expenses: state.expenses.map(e => e.id === id ? updatedExpense : e)
+                }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+            throw error
+        } finally {
+            set({ isLoading: false })
         }
-
-        const { data: updatedExpense, error } = await supabase
-            .from('expenses')
-            .update(updateData)
-            .eq('id', id)
-            .select('*, category:categories(*), credit_card:credit_cards(*)')
-            .single()
-
-        if (error) throw error
-        set((state) => ({
-            expenses: state.expenses.map(e => e.id === id ? updatedExpense : e)
-        }))
     },
 
     deleteExpense: async (id) => {
-        const { error } = await supabase.from('expenses').delete().eq('id', id)
-        if (error) throw error
-        set((state) => ({
-            expenses: state.expenses.filter(e => e.id !== id)
-        }))
+        set({ isLoading: true, error: null })
+        try {
+            const isOnline = typeof window !== 'undefined' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+
+            if (isOnline) {
+                await fetch(`/api/data/proxy?table=expenses&id=${id}`, { method: 'DELETE' })
+                set((state) => ({ expenses: state.expenses.filter(e => e.id !== id) }))
+            } else {
+                const { error } = await supabase.from('expenses').delete().eq('id', id)
+                if (error) throw error
+                set((state) => ({ expenses: state.expenses.filter(e => e.id !== id) }))
+            }
+        } catch (error: any) {
+            set({ error: error.message })
+        } finally {
+            set({ isLoading: false })
+        }
     },
 
     // Income Actions
