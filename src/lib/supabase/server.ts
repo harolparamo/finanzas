@@ -27,24 +27,38 @@ export function createClient() {
         {
             cookies: {
                 get(name: string) {
-                    return cookieStore.get(name)?.value
+                    const cookie = cookieStore.get(name)?.value
+                    if (cookie) console.log(`[Supabase Server] Cookie found: ${name}`)
+                    return cookie
                 },
                 set(name: string, value: string, options: CookieOptions) {
                     try {
-                        cookieStore.set({ name, value, ...options })
+                        console.log(`[Supabase Server] Setting cookie: ${name}`)
+                        cookieStore.set({
+                            name,
+                            value,
+                            ...options,
+                            path: options.path || '/',
+                            sameSite: options.sameSite || 'lax',
+                            secure: options.secure || process.env.NODE_ENV === 'production'
+                        })
                     } catch (error) {
-                        // The `set` method was called from a Server Component.
-                        // This can be ignored if you have middleware refreshing
-                        // user sessions.
+                        console.error(`[Supabase Server] Error setting cookie: ${name}`, error)
                     }
                 },
                 remove(name: string, options: CookieOptions) {
                     try {
-                        cookieStore.set({ name, value: '', ...options })
+                        console.log(`[Supabase Server] Removing cookie: ${name}`)
+                        cookieStore.set({
+                            name,
+                            value: '',
+                            ...options,
+                            path: options.path || '/',
+                            sameSite: options.sameSite || 'lax',
+                            secure: options.secure || process.env.NODE_ENV === 'production'
+                        })
                     } catch (error) {
-                        // The `delete` method was called from a Server Component.
-                        // This can be ignored if you have middleware refreshing
-                        // user sessions.
+                        console.error(`[Supabase Server] Error removing cookie: ${name}`, error)
                     }
                 },
             },

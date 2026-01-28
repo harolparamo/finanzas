@@ -152,6 +152,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 return await get().login(email, password)
             }
         } catch (error: any) {
+            console.error('[AuthStore] Registration error:', error)
             set({ error: error.message })
             return false
         } finally {
