@@ -5,7 +5,22 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
     try {
         const { email, password } = await request.json()
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
         console.log(`[Proxy Login] Attempting for: ${email}`)
+        console.log(`[Proxy Login] Supabase URL: ${supabaseUrl}`)
+
+        // Connectivity pre-check
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const ping = await fetch(supabaseUrl, { signal: controller.signal, cache: 'no-store' });
+            console.log(`[Proxy Login] Network Check: Reachable (Status ${ping.status})`);
+            clearTimeout(timeoutId);
+        } catch (netErr: any) {
+            console.error(`[Proxy Login] Network Check FAILED: ${netErr.message}`);
+            // Don't return here, attempt login anyway but we'll see this in logs
+        }
+
         const supabase = createServerClient()
 
         let { data, error } = await supabase.auth.signInWithPassword({
