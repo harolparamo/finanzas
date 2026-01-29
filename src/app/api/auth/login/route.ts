@@ -38,9 +38,9 @@ export async function POST(request: Request) {
             }
         }
 
-        if (error) {
-            console.error(`[Proxy Login] Error: ${error.message}`)
-            return NextResponse.json({ error: error.message }, { status: 401 })
+        if (error || !data.user) {
+            console.error(`[Proxy Login] Error: ${error?.message || 'User not found'}`)
+            return NextResponse.json({ error: error?.message || 'Login failed' }, { status: 401 })
         }
 
         // Fetch profile to return everything atomic

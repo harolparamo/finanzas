@@ -17,9 +17,9 @@ export async function POST(request: Request) {
             email_confirm: true
         })
 
-        if (error) {
-            console.error(`[Proxy Register] Error: ${error.message}`)
-            return NextResponse.json({ error: error.message }, { status: 400 })
+        if (error || !data.user) {
+            console.error(`[Proxy Register] Error: ${error?.message || 'User creation failed'}`)
+            return NextResponse.json({ error: error?.message || 'Registration failed' }, { status: 400 })
         }
 
         // Fetch profile (created by DB trigger usually)
