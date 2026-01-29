@@ -42,12 +42,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 if (response.ok) {
                     const { user } = await response.json()
                     if (user) {
+                        console.log(`[AuthStore] Online session confirmed for ${user.email}`)
                         set({ user, isAuthenticated: true })
                         if (typeof window !== 'undefined') {
                             localStorage.setItem('auth_user', JSON.stringify(user))
                         }
                         return
+                    } else {
+                        console.log('[AuthStore] Online session endpoint returned null user')
                     }
+                } else {
+                    console.error(`[AuthStore] Session endpoint error: ${response.status}`)
                 }
 
                 // Fallback to localStorage if online session check fails
@@ -112,8 +117,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     body: JSON.stringify({ email, password })
                 })
                 const result = await response.json()
-                if (!response.ok) throw new Error(result.error || 'Login failed')
+                if (!response.ok) {
+                    console.error(`[AuthStore] Online login failed: ${result.error}`)
+                    throw new Error(result.error || 'Login failed')
+                }
 
+                console.log(`[AuthStore] Online login success for ${result.user?.email}`)
                 // Update state immediately with user + profile data
                 set({ user: result.user, isAuthenticated: true })
                 if (typeof window !== 'undefined') {

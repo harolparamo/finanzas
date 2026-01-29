@@ -24,10 +24,13 @@ export async function updateSession(request: NextRequest) {
                     return request.cookies.get(name)?.value
                 },
                 set(name: string, value: string, options: CookieOptions) {
+                    const isSecure = process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://') || false;
                     request.cookies.set({
                         name,
                         value,
                         ...options,
+                        secure: isSecure,
+                        sameSite: 'lax'
                     })
                     response = NextResponse.next({
                         request: {
@@ -38,6 +41,8 @@ export async function updateSession(request: NextRequest) {
                         name,
                         value,
                         ...options,
+                        secure: isSecure,
+                        sameSite: 'lax'
                     })
                 },
                 remove(name: string, options: CookieOptions) {

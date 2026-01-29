@@ -33,14 +33,15 @@ export function createClient() {
                 },
                 set(name: string, value: string, options: CookieOptions) {
                     try {
-                        console.log(`[Supabase Server] Setting cookie: ${name}`)
+                        const isSecure = process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://') || false;
+                        console.log(`[Supabase Server] Setting cookie: ${name} (Secure: ${isSecure})`)
                         cookieStore.set({
                             name,
                             value,
                             ...options,
                             path: options.path || '/',
-                            sameSite: options.sameSite || 'lax',
-                            secure: options.secure // Trust Supabase or browser defaults
+                            sameSite: isSecure ? 'lax' : 'lax', // Keep lax for redirects
+                            secure: isSecure ? true : false // Only true if we have HTTPS
                         })
                     } catch (error) {
                         console.error(`[Supabase Server] Error setting cookie: ${name}`, error)
