@@ -54,7 +54,36 @@ export async function POST(request: Request) {
         }
 
         if (error || !data.user) {
-            console.error(`[Proxy Login] Error: ${error?.message || 'User not found'}`)
+            console.error(`[Proxy Login] Auth Error: ${error?.message || 'User not found'}`)
+
+            // Deep inspection via Admin Client
+            try {
+                const adminClient = createServiceClient()
+                const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers()
+
+                if (listError) {
+                    console.error(`[Proxy Login] Admin List Error: ${listError.message}`)
+                } else {
+                    const foundUser = users.find(u => u.email === email)
+                    if (foundUser) {
+                        console.log(`[Proxy Login] User exists in DB: ${foundUser.id}`)
+                        console.log(`[Proxy Login] Confirmed At: ${foundUser.email_confirmed_at}`)
+                        console.log(`[Proxy Login] Last Sign In: ${foundUser.last_sign_in_at}`)
+
+                        if (!foundUser.email_confirmed_at) {
+                            console.log(`[Proxy Login] User is NOT confirmed. Forcing confirmation...`)
+                            const { error: updError } = await adminClient.auth.admin.updateUserById(foundUser.id, { email_confirm: true })
+                            if (updError) console.error(`[Proxy Login] Force confirm FAILED: ${updError.message}`)
+                            else console.log(`[Proxy Login] Force confirm SUCCESS.`)
+                        }
+                    } else {
+                        console.log(`[Proxy Login] User ${email} NOT FOUND in Supabase Auth list.`)
+                    }
+                }
+            } catch (inspectError: any) {
+                console.error(`[Proxy Login] Admin Inspection Failed: ${inspectError.message}`)
+            }
+
             return NextResponse.json({ error: error?.message || 'Login failed' }, { status: 401 })
         }
 
