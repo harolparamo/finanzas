@@ -78,6 +78,11 @@ export async function POST(request: Request) {
                         }
                     } else {
                         console.log(`[Proxy Login] User ${email} NOT FOUND in Supabase Auth list.`)
+                        console.log(`[Proxy Login] Total users in DB: ${users.length}`)
+                        if (users.length > 0) {
+                            const emails = users.map(u => u.email).join(', ')
+                            console.log(`[Proxy Login] Available emails: ${emails}`)
+                        }
                     }
                 }
             } catch (inspectError: any) {
