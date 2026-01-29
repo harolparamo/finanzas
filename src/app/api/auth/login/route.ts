@@ -53,7 +53,11 @@ export async function POST(request: Request) {
         console.log(`[Proxy Login] Success for: ${email}`)
         return NextResponse.json({ user: { ...data.user, ...profile } })
     } catch (error: any) {
-        console.error(`[Proxy Login] Fatal: ${error.message}`)
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
+        console.error(`[Proxy Login] Fatal Exception:`, error)
+        return NextResponse.json({
+            error: error.message || 'Internal Server Error',
+            details: error.stack,
+            supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL
+        }, { status: 500 })
     }
 }
