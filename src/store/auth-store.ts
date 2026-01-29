@@ -116,14 +116,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 })
-                const result = await response.json()
+
+                let result;
+                try {
+                    result = await response.json()
+                } catch (e) {
+                    const text = await response.text()
+                    console.error(`[AuthStore] Failed to parse response (Status ${response.status}):`, text.slice(0, 500))
+                    throw new Error(`Server returned status ${response.status} (invalid JSON)`)
+                }
+
                 if (!response.ok) {
-                    console.error(`[AuthStore] Online login failed: ${result.error}`)
+                    console.error(`[AuthStore] Online login failed (Status ${response.status}):`, result.error)
                     throw new Error(result.error || 'Login failed')
                 }
 
                 console.log(`[AuthStore] Online login success for ${result.user?.email}`)
-                // Update state immediately with user + profile data
                 set({ user: result.user, isAuthenticated: true })
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('auth_user', JSON.stringify(result.user))
