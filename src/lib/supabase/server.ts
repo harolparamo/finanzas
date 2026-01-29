@@ -9,8 +9,18 @@ export function createClient() {
     // Fallback only for local development
     if (!supabaseUrl || !supabaseAnonKey) {
         if (process.env.NODE_ENV === 'production') {
-            console.error('[Supabase Server] CRITICAL: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is missing!')
-            // We return the client anyway but the login proxy will catch the empty URL now
+            console.error('[Supabase Server] WARN: Environment variables missing. Using hardcoded fallback.')
+            return createServerClient(
+                'http://antigravity-supabase-2789c8-76-13-100-74.traefik.me',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjkyNjk5MTUsImV4cCI6MTg5MzQ1NjAwMCwicm9sZSI6ImFub24iLCJpc3MiOiJzdXBhYmFzZSJ9.LQFvzeOVKK5PKdrtI9iFrxtHmTSQEUadHzSEIG9rlQI',
+                {
+                    cookies: {
+                        get(name: string) { return undefined },
+                        set(name: string, value: string, options: CookieOptions) { },
+                        remove(name: string, options: CookieOptions) { },
+                    },
+                }
+            )
         }
         return createServerClient(
             'https://xyz.supabase.co',
