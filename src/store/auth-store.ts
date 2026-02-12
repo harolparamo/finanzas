@@ -74,11 +74,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const { data: { session } } = await supabase.auth.getSession()
 
                 if (session) {
-                    const { data: profile } = await supabase
+                    let { data: profile, error: profileError } = await supabase
                         .from('profiles')
                         .select('*')
                         .eq('id', session.user.id)
                         .single()
+
+                    // Self-healing: Create profile if missing
+                    if (profileError && profileError.code === 'PGRST116') {
+                        console.log(`[AuthStore] Profile missing for ${session.user.email}. Creating...`)
+                        const { data: newProfile, error: createError } = await supabase
+                            .from('profiles')
+                            .insert({
+                                id: session.user.id,
+                                email: session.user.email!,
+                                full_name: (session.user as any).user_metadata?.full_name || null
+                            })
+                            .select()
+                            .single()
+
+                        if (!createError) profile = newProfile
+                        else console.error('[AuthStore] Failed to create missing profile:', createError)
+                    }
 
                     set({
                         user: { ...session.user, ...profile } as Profile,
@@ -142,11 +159,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password })
                 if (error) throw error
 
-                const { data: profile } = await supabase
+                let { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', data.user.id)
                     .single()
+
+                // Self-healing: Create profile if missing
+                if (profileError && profileError.code === 'PGRST116') {
+                    console.log(`[AuthStore] Profile missing for ${data.user.email}. Creating...`)
+                    const { data: newProfile, error: createError } = await supabase
+                        .from('profiles')
+                        .insert({
+                            id: data.user.id,
+                            email: data.user.email!,
+                            full_name: (data.user as any).user_metadata?.full_name || null
+                        })
+                        .select()
+                        .single()
+
+                    if (!createError) profile = newProfile
+                    else console.error('[AuthStore] Failed to create missing profile during login:', createError)
+                }
 
                 set({
                     user: { ...data.user, ...profile } as Profile,

@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
     try {

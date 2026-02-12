@@ -38,6 +38,7 @@ interface DataState {
     updateGoal: (id: string, data: Partial<GoalFormData>) => Promise<void>
     deleteGoal: (id: string) => Promise<void>
     addContribution: (goalId: string, amount: number) => Promise<void>
+    seedCategories: () => Promise<void>
 }
 
 const supabase = createClient()
@@ -112,6 +113,11 @@ export const useDataStore = create<DataState>((set, get) => ({
                     configs.map(c => fetch(`/api/data/proxy?table=${c.table}&select=${encodeURIComponent(c.select)}`).then(r => r.json()))
                 )
 
+                // Log results for debugging online
+                results.forEach((res, i) => {
+                    if (res.error) console.error(`[Store Fetch] Error fetching ${configs[i].table}:`, res.error)
+                })
+
                 set({
                     expenses: results[0].data || [],
                     income: results[1].data || [],
@@ -120,6 +126,13 @@ export const useDataStore = create<DataState>((set, get) => ({
                     goals: results[4].data || [],
                     categories: results[5].data || [],
                 })
+
+                // Self-healing: Seed categories if missing for online user
+                const cats = results[5].data || []
+                if (cats.length === 0) {
+                    console.log('[DataStore] No categories found via Proxy. Seeding defaults...')
+                    await get().seedCategories()
+                }
             } else {
                 // Local Direct Fetch
                 const supabase = createClient()
@@ -147,6 +160,12 @@ export const useDataStore = create<DataState>((set, get) => ({
                     goals: goals || [],
                     categories: categories || []
                 })
+
+                // Self-healing: Seed categories if missing for real local user
+                if (!categories || categories.length === 0) {
+                    console.log('[DataStore] No categories found for user. Seeding defaults...')
+                    await get().seedCategories()
+                }
             }
         } catch (error: any) {
             set({ error: error.message })
@@ -164,17 +183,24 @@ export const useDataStore = create<DataState>((set, get) => ({
                 window.location.hostname !== '127.0.0.1'
 
             if (isOnline) {
+                const formattedExpense = {
+                    ...expense,
+                    expense_date: expense.expense_date.toISOString().split('T')[0],
+                    month: expense.expense_date.getMonth() + 1,
+                    year: expense.expense_date.getFullYear(),
+                }
                 const response = await fetch('/api/data/proxy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         table: 'expenses',
-                        item: expense,
+                        item: formattedExpense,
                         select: '*, category:categories(*), credit_card:credit_cards(*)'
                     })
                 })
                 const { data, error } = await response.json()
                 if (error) throw new Error(error)
+                console.log(`[Store Add Expense] Proxy response data:`, data); // Log the data received from the proxy
                 set((state) => ({ expenses: [data, ...state.expenses] }))
             } else {
                 const { data: { user } } = await supabase.auth.getUser()
@@ -289,10 +315,16 @@ export const useDataStore = create<DataState>((set, get) => ({
                 window.location.hostname !== '127.0.0.1'
 
             if (isOnline) {
+                const formattedIncome = {
+                    ...income,
+                    income_date: income.income_date.toISOString().split('T')[0],
+                    month: income.income_date.getMonth() + 1,
+                    year: income.income_date.getFullYear(),
+                }
                 const response = await fetch('/api/data/proxy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ table: 'income', item: income })
+                    body: JSON.stringify({ table: 'income', item: formattedIncome })
                 })
                 const { data, error } = await response.json()
                 if (error) throw new Error(error)
@@ -784,6 +816,53 @@ export const useDataStore = create<DataState>((set, get) => ({
             set({ error: error.message })
         } finally {
             set({ isLoading: false })
+        }
+    },
+
+    seedCategories: async () => {
+        const authStore = (await import('./auth-store')).useAuthStore.getState()
+        const user = authStore.user
+        if (!user) return
+
+        const { mockCategories } = await import('@/lib/mock-data')
+        const defaultCats = mockCategories.map(cat => ({
+            user_id: user.id,
+            name: cat.name,
+            icon: cat.icon,
+            color: cat.color,
+            is_default: true,
+            sort_order: cat.sort_order
+        }))
+
+        const isOnline = typeof window !== 'undefined' &&
+            window.location.hostname !== 'localhost' &&
+            window.location.hostname !== '127.0.0.1'
+
+        try {
+            if (isOnline) {
+                const response = await fetch('/api/data/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'categories',
+                        item: defaultCats,
+                        select: '*'
+                    })
+                })
+                const { data, error } = await response.json()
+                if (error) throw new Error(error)
+                set({ categories: data })
+            } else {
+                const { data, error } = await supabase
+                    .from('categories')
+                    .insert(defaultCats)
+                    .select()
+
+                if (error) throw error
+                set({ categories: data || [] })
+            }
+        } catch (error: any) {
+            console.error('[DataStore] Seeding failed:', error)
         }
     }
 }))
