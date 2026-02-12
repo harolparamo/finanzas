@@ -56,8 +56,9 @@ export function IncomeForm({ id }: IncomeFormProps) {
                 await addIncome(values)
             }
             closeModal()
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error saving income:", error)
+            alert(`Error al guardar el ingreso: ${error.message || 'Error desconocido'}`)
         }
     }
 

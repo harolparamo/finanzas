@@ -188,7 +188,9 @@ export const useDataStore = create<DataState>((set, get) => ({
                     expense_date: expense.expense_date.toISOString().split('T')[0],
                     month: expense.expense_date.getMonth() + 1,
                     year: expense.expense_date.getFullYear(),
+                    credit_card_id: expense.credit_card_id || null, // Convert empty to null for UUID field
                 }
+                console.log(`[Store Add Expense] Sending to proxy:`, formattedExpense)
                 const response = await fetch('/api/data/proxy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -198,9 +200,10 @@ export const useDataStore = create<DataState>((set, get) => ({
                         select: '*, category:categories(*), credit_card:credit_cards(*)'
                     })
                 })
-                const { data, error } = await response.json()
-                if (error) throw new Error(error)
-                console.log(`[Store Add Expense] Proxy response data:`, data); // Log the data received from the proxy
+                const result = await response.json()
+                if (result.error) throw new Error(result.error)
+                const data = result.data
+                console.log(`[Store Add Expense] Proxy success:`, data);
                 set((state) => ({ expenses: [data, ...state.expenses] }))
             } else {
                 const { data: { user } } = await supabase.auth.getUser()
@@ -326,8 +329,9 @@ export const useDataStore = create<DataState>((set, get) => ({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ table: 'income', item: formattedIncome })
                 })
-                const { data, error } = await response.json()
-                if (error) throw new Error(error)
+                const result = await response.json()
+                if (result.error) throw new Error(result.error)
+                const data = result.data
                 set((state) => ({ income: [data, ...state.income] }))
             } else {
                 const { data: { user } } = await supabase.auth.getUser()

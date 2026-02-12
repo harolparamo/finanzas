@@ -67,8 +67,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                 await addExpense(values)
             }
             closeModal()
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error saving expense:", error)
+            alert(`Error al guardar el gasto: ${error.message || 'Error desconocido'}`)
         }
     }
 
