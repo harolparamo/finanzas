@@ -44,14 +44,29 @@ export async function POST(request: Request) {
         : { ...item, user_id: user.id }
 
     // If it's a single item (has ID or is new single item), use single()
-    if (!Array.isArray(itemWithUser) || (itemWithUser as any).id) {
-        const { data, error } = await supabase.from(table).upsert(itemWithUser).select(select).single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 400 })
-        return NextResponse.json({ data })
-    } else {
-        const { data, error } = await supabase.from(table).upsert(itemWithUser).select(select)
-        if (error) return NextResponse.json({ error: error.message }, { status: 400 })
-        return NextResponse.json({ data })
+    try {
+        if (!Array.isArray(itemWithUser) || (itemWithUser as any).id) {
+            console.log(`[Proxy POST] Upserting single item to ${table}`)
+            const { data, error } = await supabase.from(table).upsert(itemWithUser).select(select).single()
+            if (error) {
+                console.error(`[Proxy POST] Error upserting to ${table}:`, error.message)
+                return NextResponse.json({ error: error.message }, { status: 400 })
+            }
+            console.log(`[Proxy POST] Successfully upserted to ${table}`)
+            return NextResponse.json({ data })
+        } else {
+            console.log(`[Proxy POST] Upserting array of ${itemWithUser.length} items to ${table}`)
+            const { data, error } = await supabase.from(table).upsert(itemWithUser).select(select)
+            if (error) {
+                console.error(`[Proxy POST] Error upserting array to ${table}:`, error.message)
+                return NextResponse.json({ error: error.message }, { status: 400 })
+            }
+            console.log(`[Proxy POST] Successfully upserted array to ${table}`)
+            return NextResponse.json({ data })
+        }
+    } catch (err: any) {
+        console.error(`[Proxy POST] Fatal exception:`, err)
+        return NextResponse.json({ error: err.message }, { status: 500 })
     }
 }
 

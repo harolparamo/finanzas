@@ -14,11 +14,32 @@ export async function GET() {
         console.log(`[Proxy Session] Session found for: ${user.email}`)
 
         // Fetch profile data
-        const { data: profile } = await supabase
+        let { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
             .single()
+
+        // Self-healing online: Create profile if missing
+        if (profileError && profileError.code === 'PGRST116') {
+            console.log(`[Proxy Session] Profile missing online for ${user.email}. Creating...`)
+            const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                    id: user.id,
+                    email: user.email!,
+                    full_name: (user as any).user_metadata?.full_name || null
+                })
+                .select()
+                .single()
+
+            if (!createError) {
+                profile = newProfile
+                console.log(`[Proxy Session] Successfully created missing profile online for ${user.email}`)
+            } else {
+                console.error('[Proxy Session] Failed to create missing profile online:', createError.message)
+            }
+        }
 
         return NextResponse.json({
             user: { ...user, ...profile }
